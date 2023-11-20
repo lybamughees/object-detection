@@ -14,15 +14,20 @@ start = time.time()
 while True:
     
     # Starting to read video frames
-    (run, frame) = video_cap.read()
+    ret, frame = video_cap.read()
 
-    if run:
-        # Convert to grayscale
-        gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        # Rescaling frame
-        width = int(frame.shape[1] * 0.9)
-        height = int(frame.shape[0] * 0.9)
-        frame = cv2.resize(frame, (width, height))
+    # Check if the frame is successfully read
+    if not ret:
+        print("Error reading video frame. Exiting...")
+        break
+
+    # Convert to grayscale
+    gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    
+    # Rescaling frame
+    width = int(frame.shape[1] * 0.9)
+    height = int(frame.shape[0] * 0.9)
+    frame = cv2.resize(frame, (width, height))
 
     # Detecting cars
     detection_start = time.time()
