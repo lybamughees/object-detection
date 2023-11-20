@@ -1,57 +1,59 @@
 import cv2
 import time
 
-# Storing input video file + model files
-input_file = 'sample_video.mp4'
-video_cap = cv2.VideoCapture(input_file)
-model = 'haarcascade_car.xml'
+def obstacle_detection(video_path):
+    # Load video
+    cap = cv2.VideoCapture(video_path)
 
-# Using pre-defined model
-carModel = cv2.CascadeClassifier(model)
+    # Check if video opened successfully
+    if not cap.isOpened():
+        print("Error: Could not open video.")
+        return
 
-start = time.time()
+    # Load pre-trained object detection model (Haarcascades for simplicity)
+    cascade_path = "haarcascade_car.xml"
+    obstacle_cascade = cv2.CascadeClassifier(cascade_path)
 
-while True:
-    
-    # Starting to read video frames
-    ret, frame = video_cap.read()
+    start_time = time.time()
 
-    # Check if the frame is successfully read
-    if not ret:
-        break
+    while True:
+        # Read frame
+        ret, frame = cap.read()
 
-    # Convert to grayscale
-    gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-    
-    # Rescaling frame
-    width = int(frame.shape[1] * 0.9)
-    height = int(frame.shape[0] * 0.9)
-    frame = cv2.resize(frame, (width, height))
+        if not ret:
+            break
 
-    # Detecting cars
-    detection_start = time.time()
-    car_objects = carModel.detectMultiScale(gray_frame, 1.1, 7)
-    detection_end = time.time()
+        # Convert frame to grayscale for better detection
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
 
-    # Drawing boxes around cars
-    for (x, y, w, h) in car_objects:
-        cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
-        cv2.putText(frame, 'CAR', (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
-        
-    # Displays GUI with running the video frame
-    cv2.imshow('Detecting cars on the street...', frame)
-    
-    # Printing detection coordinates 
-    print("Cars detected at: " + "[" + str(x) + ", " + str(y) + "]")
-    
-    # Calculating and printing time taken for detection
-    detection_time = detection_end - detection_start
-    print("Time taken for detection: {:.2f} seconds".format(detection_time))
+        # Detect obstacles
+        obstacles = obstacle_cascade.detectMultiScale(
+            gray,
+            scaleFactor=1.1,
+            minNeighbors=5,
+            minSize=(30, 30),
+            flags=cv2.CASCADE_SCALE_IMAGE
+        )
 
-    if cv2.waitKey(1) == 27:
-        break
-    
-video_cap.release()
-cv2.destroyAllWindows()
-end = time.time()
-print("Total Duration Time: {:.2f} seconds".format(end - start))
+        # Draw rectangles around detected obstacles
+        for (x, y, w, h) in obstacles:
+            cv2.rectangle(frame, (x, y), (x+w, y+h), (0, 255, 0), 2)
+
+        # Display the resulting frame
+        cv2.imshow('Obstacle Detection', frame)
+
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+
+    end_time = time.time()
+    elapsed_time = end_time - start_time
+    print(f"Total time taken for obstacle detection: {elapsed_time:.2f} seconds")
+
+    # Release video capture object and close windows
+    cap.release()
+    cv2.destroyAllWindows()
+
+if __name__ == "__main__":
+    # Replace 'your_video_path.mp4' with the path to your video file
+    obstacle_detection('sample_video.mp4')
+
