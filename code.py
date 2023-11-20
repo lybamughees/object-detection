@@ -1,66 +1,53 @@
 import cv2
 import time
 
-def object_detection(video_path):
-    # Load the car cascade classifier
-    cascade_file_path = cv2.data.haarcascades + 'haarcascade_car.xml'
-    car_cascade = cv2.CascadeClassifier(cascade_file_path)
+# Storing input video file + model files
+input_file = 'sample_video.mp4'
+video_cap = cv2.VideoCapture(input_file)
+model = 'haarcascade_car.xml'
 
-    # Check if the cascade loaded successfully
-    if car_cascade.empty():
-        print(f"Error: Unable to load cascade file at {cascade_file_path}")
-        return
+# Using pre-defined model
+carModel = cv2.CascadeClassifier(model)
 
-    # Open the video file
-    cap = cv2.VideoCapture(video_path)
+start = time.time()
 
-    if not cap.isOpened():
-        print("Error opening video file")
-        return
+while True:
+    
+    # Starting to read video frames
+    (run, frame) = video_cap.read()
 
-    start_time = time.time()  # Record the start time
+    if run:
+        # Convert to grayscale
+        gray_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        # Rescaling frame
+        width = int(frame.shape[1] * 0.9)
+        height = int(frame.shape[0] * 0.9)
+        frame = cv2.resize(frame, (width, height))
 
-    frame_count = 0
+    # Detecting cars
+    detection_start = time.time()
+    car_objects = carModel.detectMultiScale(gray_frame, 1.1, 7)
+    detection_end = time.time()
 
-    while True:
-        ret, frame = cap.read()
+    # Drawing boxes around cars
+    for (x, y, w, h) in car_objects:
+        cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
+        cv2.putText(frame, 'CAR', (x, y - 10), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+        
+    # Displays GUI with running the video frame
+    cv2.imshow('Detecting cars on the street...', frame)
+    
+    # Printing detection coordinates 
+    print("Cars detected at: " + "[" + str(x) + ", " + str(y) + "]")
+    
+    # Calculating and printing time taken for detection
+    detection_time = detection_end - detection_start
+    print("Time taken for detection: {:.2f} seconds".format(detection_time))
 
-        if not ret:
-            break
-
-        # Convert the frame to grayscale
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-
-        # Measure execution time for object detection
-        detection_start_time = time.time()
-
-        # Detect cars in the frame
-        cars = car_cascade.detectMultiScale(gray, scaleFactor=1.1, minNeighbors=5)
-
-        detection_end_time = time.time()
-        execution_time = detection_end_time - detection_start_time
-
-        # Draw rectangles around the detected cars
-        for (x, y, w, h) in cars:
-            cv2.rectangle(frame, (x, y), (x + w, y + h), (255, 0, 0), 2)
-
-        # Display the frame with detections
-        cv2.imshow('Car Detection', frame)
-
-        # Exit when 'q' is pressed
-        if cv2.waitKey(1) & 0xFF == ord('q'):
-            break
-
-        frame_count += 1
-
-    end_time = time.time()  # Record the end time
-    total_execution_time = end_time - start_time
-
-    print(f"Total execution time: {total_execution_time:.2f} seconds")
-
-    # Release video capture and close all windows
-    cap.release()
-    cv2.destroyAllWindows()
-
-if __name__ == "__main__":
-    object_detection('sample_video.mp4')
+    if cv2.waitKey(1) == 27:
+        break
+    
+video_cap.release()
+cv2.destroyAllWindows()
+end = time.time()
+print("Total Duration Time: {:.2f} seconds".format(end - start))
