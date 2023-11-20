@@ -18,7 +18,6 @@ while True:
 
     # Check if the frame is successfully read
     if not ret:
-        print("Error reading video frame. Exiting...")
         break
 
     # Convert to grayscale
